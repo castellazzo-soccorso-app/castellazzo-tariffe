@@ -19,7 +19,7 @@ export default function App() {
   const [evitaAutostrada, setEvitaAutostrada] = useState(false)
   const [nome, setNome] = useState('')
   const [telefono, setTelefono] = useState('')
-  const {user,loading,authorized,loginGoogle,  logout,} = useAuth()
+  const {user,loading,authorized, role, loginGoogle,  logout,} = useAuth()
   const [fasce, setFasce] = useState<Fascia[]>(() => {
     try { return JSON.parse(localStorage.getItem('fasceTariffe') || '') || DEFAULT_FASCE } catch { return DEFAULT_FASCE }
   })
