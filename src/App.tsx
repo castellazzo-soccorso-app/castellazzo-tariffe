@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useAuth } from './context/AuthContext'
 
 type Fascia = { id: string; da: number; a: number; costo: number }
 const DEFAULT_FASCE: Fascia[] = [
@@ -18,13 +19,13 @@ export default function App() {
   const [evitaAutostrada, setEvitaAutostrada] = useState(false)
   const [nome, setNome] = useState('')
   const [telefono, setTelefono] = useState('')
+  const {user,loading,authorized,loginGoogle,  logout,} = useAuth()
   const [fasce, setFasce] = useState<Fascia[]>(() => {
     try { return JSON.parse(localStorage.getItem('fasceTariffe') || '') || DEFAULT_FASCE } catch { return DEFAULT_FASCE }
   })
   const [mostraConfig, setMostraConfig] = useState(false)
 
   useEffect(() => { localStorage.setItem('fasceTariffe', JSON.stringify(fasce)) }, [fasce])
-
 const kmInseriti = Number(km.replace(',', '.')) || 0
 
 // I km inseriti devono essere già quelli mostrati da Google Maps.
@@ -33,6 +34,8 @@ const kmTariffati = kmInseriti
 
   const fascia = useMemo(() => fasce.find(f => kmTariffati >= f.da && kmTariffati <= f.a), [fasce, kmTariffati])
   const totale = fascia ? kmTariffati * fascia.costo : 0
+
+
 
   function aggiungiTappa() { setTappe([...tappe, '']) }
   function modificaTappa(i: number, valore: string) { setTappe(tappe.map((t, n) => n === i ? valore : t)) }
@@ -97,8 +100,79 @@ if (andataRitorno) {
     setFasce(fasce.map(f => f.id === id ? { ...f, [campo]: Number(valore.replace(',', '.')) || 0 } : f))
   }
 
+
+  if (loading) {
+  return (
+    <main className="container">
+      <section className="card">
+        <h1>Caricamento...</h1>
+      </section>
+    </main>
+  )
+}
+
+if (!user || !authorized) {
+  return (
+    <main className="container">
+      <section className="card">
+        <h1>Calcolo Tariffe Trasporto</h1>
+
+        <p>
+          Accesso riservato agli utenti autorizzati.
+        </p>
+
+        <button
+          className="primary"
+          onClick={loginGoogle}
+        >
+          Accedi con Google
+        </button>
+      </section>
+    </main>
+  )
+}
+
+
   return <main className="container">
-    <header><div><p className="eyebrow">Associazione di volontariato</p><h1>Calcolo tariffa trasporto</h1><p>Imposta il percorso, aprilo in Google Maps e inserisci i chilometri visualizzati.</p></div><button className="secondary" onClick={() => setMostraConfig(!mostraConfig)}>⚙ Configurazione</button></header>
+    <header>
+  <div>
+    <p className="eyebrow">
+      Associazione di volontariato
+    </p>
+
+    <h1>Calcolo tariffa trasporto</h1>
+
+    <p>
+      Imposta il percorso, aprilo in Google Maps e
+      inserisci i chilometri visualizzati.
+    </p>
+  </div>
+
+  <div
+    style={{
+      display: 'flex',
+      gap: '10px',
+      alignItems: 'center',
+    }}
+  >
+ {role === 'admin' && (
+  <button
+    className="secondary"
+    onClick={() => setMostraConfig(!mostraConfig)}
+  >
+    ⚙ Configurazione
+  </button>
+)}
+
+    <button
+      className="secondary"
+      onClick={logout}
+    >
+      Logout
+    </button>
+  </div>
+</header>
+
 
     {mostraConfig && <section className="card config"><h2>Fasce tariffarie</h2><p>Le modifiche sono salvate solo su questo dispositivo.</p>
       <div className="tariffe-head"><span>Da km</span><span>A km</span><span>€/km</span><span></span></div>
