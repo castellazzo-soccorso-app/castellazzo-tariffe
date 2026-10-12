@@ -84,17 +84,62 @@ if (andataRitorno) {
     params.set('avoid', 'highways')
   }
 
-  window.open(
-    `https://www.google.com/maps/dir/?${params.toString()}`,
-    '_blank',
-    'noopener,noreferrer'
-  )
+  
+window.open(
+  `https://www.google.com/maps/dir/?${params.toString()}`,
+  '_blank',
+  'noopener,noreferrer'
+)
 }
 
 
   function pulisci() {
     setPartenza(''); setArrivo(''); setTappe([]); setKm(''); setAndataRitorno(false); setEvitaAutostrada(false); setNome(''); setTelefono('')
   }
+
+ function inviaWhatsApp() {
+  if (!nome.trim() || !telefono.trim()) {
+    alert('Inserisci nominativo e telefono.')
+    return
+  }
+
+  if (!partenza.trim() || !arrivo.trim()) {
+    alert('Inserisci partenza e arrivo.')
+    return
+  }
+
+  if (kmTariffati <= 0 || !fascia) {
+    alert('Inserisci i chilometri e verifica la tariffa.')
+    return
+  }
+
+  const percorso = [
+    partenza.trim(),
+    ...tappe.map(t => t.trim()).filter(Boolean),
+    arrivo.trim(),
+    ...(andataRitorno ? [partenza.trim()] : []),
+  ].join('\n→ ')
+
+  const messaggio = `*TRASPORTO PAZIENTE*
+
+*Nominativo:* ${nome.trim()}
+*Telefono:* ${telefono.trim()}
+
+*Percorso:*
+${percorso}
+
+*Km:* ${kmTariffati}
+*Fascia:* ${fascia.da}-${fascia.a} km
+*Costo/km:* ${euro.format(fascia.costo)}
+
+*Totale: ${euro.format(totale)}*`
+
+  const url = `https://wa.me/393351444925?text=${encodeURIComponent(
+    messaggio
+  )}`
+
+  window.open(url, '_blank', 'noopener,noreferrer')
+}
 
   function aggiornaFascia(id: string, campo: keyof Omit<Fascia,'id'>, valore: string) {
     setFasce(fasce.map(f => f.id === id ? { ...f, [campo]: Number(valore.replace(',', '.')) || 0 } : f))
@@ -204,6 +249,26 @@ if (!user || !authorized) {
       <div><span>Fascia applicata</span><strong>{fascia ? `${fascia.da}-${fascia.a} km · ${euro.format(fascia.costo)}/km` : kmTariffati ? 'Nessuna fascia configurata' : '-'}</strong></div>
       <div className="total"><span>Totale trasporto</span><strong>{euro.format(totale)}</strong></div>
     </section>
-    <button className="secondary full" onClick={pulisci}>Pulisci tutto</button>
+   <div
+  style={{
+    display: 'grid',
+    gap: '10px',
+    marginTop: '16px',
+  }}
+>
+  <button
+    className="primary full"
+    onClick={inviaWhatsApp}
+  >
+    📲 Invia riepilogo WhatsApp
+  </button>
+
+  <button
+    className="secondary full"
+    onClick={pulisci}
+  >
+    Pulisci tutto
+  </button>
+</div>
   </main>
 }
