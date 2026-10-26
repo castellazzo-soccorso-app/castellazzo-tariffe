@@ -1,8 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { auth, db } from '../firebase/config'
 import {
-  GoogleAuthProvider,
-  signInWithPopup,
+  signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged
 } from 'firebase/auth'
@@ -13,7 +12,7 @@ type AuthContextType = {
   loading: boolean
   authorized: boolean
   role: string
-  loginGoogle: () => Promise<void>
+  loginEmail: (email: string, password: string) => Promise<void>
   logout: () => Promise<void>
 }
 
@@ -35,13 +34,16 @@ export function AuthProvider({
       async (firebaseUser) => {
         try {
           if (firebaseUser?.email) {
+            const email = firebaseUser.email.toLowerCase()
+
             const authDoc = await getDoc(
               doc(
                 db,
                 'utenti_autorizzati_tariffe',
-                firebaseUser.email
+                email
               )
             )
+
             if (
               authDoc.exists() &&
               authDoc.data().autorizzato === true
@@ -51,9 +53,9 @@ export function AuthProvider({
               setRole(authDoc.data().ruolo || 'user')
             } else {
               await signOut(auth)
-
               setUser(null)
               setAuthorized(false)
+              setRole('user')
 
               alert(
                 'Accesso non autorizzato. Contatta il responsabile.'
@@ -62,11 +64,13 @@ export function AuthProvider({
           } else {
             setUser(null)
             setAuthorized(false)
+            setRole('user')
           }
         } catch (err) {
           console.error(err)
           setUser(null)
           setAuthorized(false)
+          setRole('user')
         }
 
         setLoading(false)
@@ -76,9 +80,15 @@ export function AuthProvider({
     return unsubscribe
   }, [])
 
-  const loginGoogle = async () => {
-    const provider = new GoogleAuthProvider()
-    await signInWithPopup(auth, provider)
+  const loginEmail = async (
+    email: string,
+    password: string
+  ) => {
+    await signInWithEmailAndPassword(
+      auth,
+      email.trim(),
+      password
+    )
   }
 
   const logout = async () => {
@@ -92,7 +102,7 @@ export function AuthProvider({
         loading,
         authorized,
         role,
-        loginGoogle,
+        loginEmail,
         logout,
       }}
     >
